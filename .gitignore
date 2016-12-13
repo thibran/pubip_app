@@ -1,2 +1,8 @@
 # bin
 pubip_app
+pubip_*.snap
+
+# snap build dirs
+parts/
+prime/
+stage/
