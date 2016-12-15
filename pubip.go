@@ -62,15 +62,13 @@ func (cfg *cfg) ipFromInternet() (string, isipv6, error) {
 	m := pubip.NewMaster()
 	m.Parallel = 2
 	m.Format = cfg.format
+	l(fmt.Sprintf("request %s address", cfg.format))
 	ip, err := m.Address()
 	if err != nil {
 		return "", false, err
 	}
-	var t isipv6 = true
-	if pubip.IsIPv4(ip) {
-		t = false
-	}
-	return ip, t, nil
+	v6 := isipv6(!pubip.IsIPv4(ip))
+	return ip, v6, nil
 }
 
 func (cfg *cfg) writeToCache(ip string, v6 isipv6, cache *Cache) {

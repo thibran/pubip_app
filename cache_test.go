@@ -108,7 +108,6 @@ func TestMaybeIP_v6orv4_returnIPv6(t *testing.T) {
 
 func TestMaybeIP_v6orv4_returnIPv4(t *testing.T) {
 	cache := Cache{
-		V6ip:   "",
 		V6last: time.Now().Add(-time.Duration(14 * time.Minute)),
 		V4ip:   "ip-4",
 		V4last: time.Now().Add(-time.Duration(14 * time.Minute)),
