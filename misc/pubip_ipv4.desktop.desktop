@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=Pubip IPv4
+Exec=pubip.guiIPv4 %U
+Icon=/snap/pubip/current/meta/gui/icon.svg
+Terminal=true
+Categories=Network;
+Type=Application

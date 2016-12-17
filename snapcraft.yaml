@@ -1,5 +1,6 @@
 name: pubip
-version: 0.3
+version: 0.4
+icon: icon.svg
 summary:  Display public IPv6 or IPv4 IP address 
 description: |
   To query for IPv6 only use 'pubip -6'.
@@ -10,11 +11,25 @@ grade: stable
 
 apps:
   pubip:
-    command: bin/pubip_app.git
+    command: pubip
+    plugs: [network]
+  guiIPv4:
+    command: echo "IPv4 -" $(pubip -4) | less -e
+    plugs: [network]
+  guiIPv6:
+    command: echo "IPv6 -" $(pubip -6) | less -e
     plugs: [network]
 
 parts:
   pubip:
     plugin: go
     source: https://github.com/thibran/pubip_app.git
+    organize:
+      bin/pubip_app.git: bin/pubip
 
+  desktopfiles:
+    plugin: dump
+    source: misc
+    organize:
+      pubip_ipv4.desktop.desktop: meta/gui/pubip_ipv4.desktop.desktop
+      pubip_ipv6.desktop.desktop: meta/gui/pubip_ipv6.desktop.desktop
