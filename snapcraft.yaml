@@ -3,8 +3,8 @@ version: 0.4
 icon: icon.svg
 summary:  Display public IPv6 or IPv4 IP address 
 description: |
-  To query for IPv6 only use 'pubip -6'.
-  To query for IPv4 only use 'pubip -4'.
+  To query IPv6 only use 'pubip -6'.
+  To query IPv4 only use 'pubip -4'.
   Results are cached and reused if not older than 15 minutes.
 confinement: strict
 grade: stable
