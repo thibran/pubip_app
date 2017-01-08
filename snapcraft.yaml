@@ -1,6 +1,6 @@
 name: pubip
 version: 0.5
-icon: icon.svg
+icon: misc/icon.svg
 summary:  Display public IPv6 or IPv4 address 
 description: |
   To query IPv6 only use 'pubip -6'.
@@ -26,10 +26,3 @@ parts:
     source: https://github.com/thibran/pubip_app.git
     organize:
       bin/pubip_app.git: bin/pubip
-
-  desktopfiles:
-    plugin: dump
-    source: misc
-    organize:
-      pubip_ipv4.desktop.desktop: meta/gui/pubip_ipv4.desktop.desktop
-      pubip_ipv6.desktop.desktop: meta/gui/pubip_ipv6.desktop.desktop
