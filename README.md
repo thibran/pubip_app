@@ -1,5 +1,5 @@
 # pubip
-App to display the public IPv6 or IPv4 IP address 
+App to display the public IPv6 or IPv4 address 
 
 <img src="icon.png" align="left" height="128" width="128" hspace="20"/>
 

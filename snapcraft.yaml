@@ -1,7 +1,7 @@
 name: pubip
 version: 0.4
 icon: icon.svg
-summary:  Display public IPv6 or IPv4 IP address 
+summary:  Display public IPv6 or IPv4 address 
 description: |
   To query IPv6 only use 'pubip -6'.
   To query IPv4 only use 'pubip -4'.
