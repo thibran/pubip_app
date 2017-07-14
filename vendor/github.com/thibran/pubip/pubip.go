@@ -21,7 +21,6 @@ import (
 //   https://tnx.nl
 //   https://l2.io
 //   https://ip.appspot.com
-//   https://ipof.in
 //   https://wgetip.com
 //   http://eth0.me
 //   https://tnx.nl
@@ -39,6 +38,9 @@ type IPFuncs []IPFn
 // IPType of the ip address
 type IPType int
 
+// ErrIPUnknown is returned if all services fail to return the public ip address.
+var ErrIPUnknown = errors.New("Public ip address unknown")
+
 const (
 	// IPv6orIPv4 accept both
 	IPv6orIPv4 IPType = iota
@@ -47,23 +49,6 @@ const (
 	// IPv4 only
 	IPv4
 )
-
-func (t IPType) String() string {
-	switch t {
-	case IPv6orIPv4:
-		return "IPv6orIPv4"
-	case IPv6:
-		return "IPv6"
-	case IPv4:
-		return "IPv4"
-	}
-	panic("unknown IPType: " + string(t))
-}
-
-type url string
-
-// ErrIPUnknown is returned if all services fail to return the public ip address.
-var ErrIPUnknown = errors.New("Public ip address unknown")
 
 // NewMaster object. Allows repetitive request to get the public ip address.
 func NewMaster() *Master {
@@ -85,42 +70,63 @@ func (m *Master) Address() (string, error) {
 	} else if m.Parallel > len(a) {
 		m.Parallel = len(a)
 	}
-	return m.addressParallel(a)
+	return address(a, m.Parallel)
 }
 
-func (m *Master) addressParallel(a IPFuncs) (string, error) {
+func address(a IPFuncs, worker int) (string, error) {
 	var wg sync.WaitGroup
-	inpc := make(chan IPFn, len(a))
-	resc := make(chan string)
+	wg.Add(worker)
+
+	tasks := createTasks(a)
+	results := make(chan string)
+
 	// start worker
-	for i := 0; i < m.Parallel; i++ {
-		wg.Add(1)
+	for i := 0; i < worker; i++ {
 		go func() {
-			defer wg.Done()
-			// worker
-			for fn := range inpc {
+			// return first valid result
+			for fn := range tasks {
 				if ip, err := fn(); err == nil {
-					resc <- ip
+					results <- ip
 					break
 				}
 			}
+			wg.Done()
 		}()
 	}
-	// feed work to worker
-	go func() {
-		defer close(inpc)
-		for _, fn := range a {
-			inpc <- fn
-		}
-	}()
 	// wait for worker to finish
 	go func() {
-		defer close(resc)
 		wg.Wait()
+		close(results)
 	}()
-	// return first ip address, if any
-	for ip := range resc {
+	return collectResult(results)
+}
+
+func createTasks(a IPFuncs) <-chan IPFn {
+	c := make(chan IPFn, len(a))
+	go func() {
+		for _, fn := range a {
+			c <- fn
+		}
+		close(c)
+	}()
+	return c
+}
+
+func collectResult(results <-chan string) (string, error) {
+	for ip := range results {
 		return ip, nil
 	}
 	return "", ErrIPUnknown
+}
+
+func (t IPType) String() string {
+	switch t {
+	case IPv6orIPv4:
+		return "IPv6orIPv4"
+	case IPv6:
+		return "IPv6"
+	case IPv4:
+		return "IPv4"
+	}
+	panic("unknown IPType: " + string(t))
 }

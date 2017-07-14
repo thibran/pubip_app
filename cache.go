@@ -27,8 +27,6 @@ var (
 	cacheTimeLimit = time.Duration(15 * time.Minute)
 )
 
-const errTempDirUnknown = "unknown tmp dir location"
-
 func loadCache(cacheFile string) (*Cache, error) {
 	f, err := os.Open(cacheFile)
 	if err != nil {
@@ -53,8 +51,8 @@ func (c *Cache) save(cacheFile string) error {
 	return enc.Encode(c)
 }
 
-// maybeIP the matching IP address for the given IPType t, if the
-// cache entry is not older than cacheTimeLimit (15 min).
+// maybeIP returns the matching IP address for the given IPType t,
+// if the cache entry is not older than cacheTimeLimit (15 min).
 func (c *Cache) maybeIP(t pubip.IPType) (string, error) {
 	useCache := func(last time.Time) bool {
 		now := time.Now()
@@ -108,13 +106,13 @@ func cacheLocation() string {
 	} else if d := os.TempDir(); len(d) != 0 {
 		cdir = d
 	}
-	if len(cdir) == 0 {
-		log.Fatalln(errTempDirUnknown)
+	if cdir == "" {
+		log.Fatalln("unknown tmp dir location")
 	}
 	return cdir + string(filepath.Separator) + "pubip.cache"
 }
 
-// returns maybe the path to the linux ~/.cache dir
+// returns maybe the path to the linux ~/.cache directory
 func dotCache() (string, error) {
 	user, err := user.Current()
 	if err != nil {

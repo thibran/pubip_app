@@ -1,7 +1,7 @@
 # pubip
 go library to receive the public IPv4 or IPv6 IP address
 
-Version: 0.2.1  
+Version: 0.3.0  
 Installation: `go get github.com/thibran/pubip`
 
 ```go
@@ -13,10 +13,10 @@ import (
 func main() {
     m := pubip.NewMaster()
 
-    // optional, set the numbe of parallel requests (default 2)
+    // set the number of parallel requests with (default 2)
     // m.Parallel = 4
-
-    // optional limit the result to e.g IPv6 (default IPv6orIPv4)
+    
+    // or IPv6 only (default IPv6orIPv4)
     // m.Format = pubip.IPv6
 
     ip, _ := m.Address()

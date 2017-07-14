@@ -2,18 +2,6 @@ package pubip
 
 import "testing"
 
-func TestIsValid(t *testing.T) {
-	if !IsValid("93.253.33.74") {
-		t.Fail()
-	}
-	if !IsValid("2001:0db8:0:0:0:0:1428:57ab") {
-		t.Fail()
-	}
-	if IsValid("=====") {
-		t.Fail()
-	}
-}
-
 func TestIsIPv4_ok(t *testing.T) {
 	if !IsIPv4("127.0.0.1") {
 		t.Fail()
@@ -111,3 +99,15 @@ func TestIsIPv6_fail(t *testing.T) {
 	// 	t.Fail()
 	// }
 }
+
+// func TestIsValid(t *testing.T) {
+// 	if !IsValid("93.253.33.74") {
+// 		t.Fail()
+// 	}
+// 	if !IsValid("2001:0db8:0:0:0:0:1428:57ab") {
+// 		t.Fail()
+// 	}
+// 	if IsValid("=====") {
+// 		t.Fail()
+// 	}
+// }

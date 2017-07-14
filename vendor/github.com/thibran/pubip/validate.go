@@ -9,22 +9,28 @@ import (
 )
 
 var (
-	errNotV6Address = errors.New("not a IPv6 address")
-	errNotV4Address = errors.New("not a IPv4 address")
+	errNotV6Address = errors.New("not an IPv6 address")
+	errNotV4Address = errors.New("not an IPv4 address")
 )
 
-// IsValid returns false if the ip address format is faulty.
-func IsValid(ip string) bool {
-	ipLen := len(ip)
-	if ipLen == 0 {
+// IsIPv4 is true if the passed string is a valid IPv4 address.
+func IsIPv4(ip string) bool {
+	// is empty
+	if len(ip) == 0 {
 		return false
 	}
-	if ipLen <= 15 { // max IPv4 len is 15 bytes: 255.255.255.255
-		if IsIPv4(ip) {
-			return true
+	a := strings.Split(ip, ".")
+	// check block count
+	if len(a) != 4 {
+		return false
+	}
+	for _, block := range a {
+		n, err := strconv.Atoi(block)
+		if err != nil || n < 0 || n > 255 {
+			return false
 		}
 	}
-	return IsIPv6(ip)
+	return true
 }
 
 // IsIPv6 is true if the passed string is a valid IPv6 address.
@@ -68,21 +74,16 @@ func IsIPv6(ip string) bool {
 	return hasContent
 }
 
-// IsIPv4 is true if the passed string is a valid IPv4 address.
-func IsIPv4(ip string) bool {
-	// is empty
-	if len(ip) == 0 {
-		return false
-	}
-	a := strings.Split(ip, ".")
-	// check block count
-	if len(a) != 4 {
-		return false
-	}
-	for _, block := range a {
-		if i, err := strconv.Atoi(block); err != nil || i < 0 || i > 255 {
-			return false
-		}
-	}
-	return true
-}
+// // IsValid returns false if the ip address format is faulty.
+// func IsValid(ip string) bool {
+// 	ipLen := len(ip)
+// 	if ipLen == 0 {
+// 		return false
+// 	}
+// 	if ipLen <= 15 { // max IPv4 len is 15 bytes: 255.255.255.255
+// 		if IsIPv4(ip) {
+// 			return true
+// 		}
+// 	}
+// 	return IsIPv6(ip)
+// }

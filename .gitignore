@@ -6,3 +6,6 @@ pubip_*.snap
 parts/
 prime/
 stage/
+
+# other
+.directory

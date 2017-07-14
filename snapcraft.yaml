@@ -1,11 +1,11 @@
 name: pubip
-version: 0.4
+version: 0.5
 icon: icon.svg
 summary:  Display public IPv6 or IPv4 address 
 description: |
   To query IPv6 only use 'pubip -6'.
   To query IPv4 only use 'pubip -4'.
-  Results are cached and reused if not older than 15 minutes.
+  The IP address is cached for 15 minutes.
 confinement: strict
 grade: stable
 
