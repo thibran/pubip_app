@@ -2,8 +2,8 @@ package main
 
 import "log"
 
-// logfn logs if verbose mode is active.
-func logfn(a ...interface{}) {
+// logln logs if verbose mode is active.
+func logln(a ...interface{}) {
 	if verbose {
 		log.Println(a...)
 	}

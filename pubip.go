@@ -10,49 +10,56 @@ import (
 	"github.com/thibran/pubip"
 )
 
-type app struct {
-	showVersion bool
-	format      pubip.IPType
-	cacheFile   string
-}
-
 const appVersion = "0.5"
 
 var verbose = false
 
+type app struct {
+	showVersion bool
+	showBoth    bool
+	format      pubip.IPType
+	cacheFile   string
+}
+
 func main() {
-	app := parseArgs()
+	app := parseFlags()
 	if app.showVersion {
 		fmt.Printf("pubip %s   %s\n", appVersion, runtime.Version())
 		os.Exit(0)
 	}
-	app.run()
+	if app.showBoth {
+		app.format = pubip.IPv6
+		v6 := app.run()
+		app.format = pubip.IPv4
+		v4 := app.run()
+		fmt.Printf("IPv6: %s\nIPv4: %s\n", v6, v4)
+		os.Exit(0)
+	}
+	fmt.Println(app.run())
 }
 
-func (ap *app) run() {
+func (ap *app) run() string {
 	cache, err := loadCache(ap.cacheFile)
 	if err != nil {
-		logfn("no cache entry")
-		ap.handleNotInCache(cache)
-		return
+		logln("no cache entry")
+		return ap.handleNotInCache(cache)
 	}
-	logfn("cache entry exists")
+	logln("cache entry exists")
 	ip, err := cache.maybeIP(ap.format)
 	if err != nil {
-		logfn("ip not in cache or too old")
-		ap.handleNotInCache(cache)
-		return
+		logln("ip not in cache or too old")
+		return ap.handleNotInCache(cache)
 	}
-	fmt.Println(ip)
+	return ip
 }
 
-func (ap *app) handleNotInCache(cache *Cache) {
+func (ap *app) handleNotInCache(cache *Cache) string {
 	ip, isipv6, err := ap.ipFromInternet()
 	if err != nil {
 		log.Fatalf("ip not in cache: %s\n", err)
 	}
-	fmt.Println(ip)
 	ap.writeToCache(ip, isipv6, cache)
+	return ip
 }
 
 type isipv6 bool
@@ -67,31 +74,30 @@ func (ap *app) ipFromInternet() (string, isipv6, error) {
 	if err != nil {
 		return "", false, err
 	}
-	v6 := isipv6(!pubip.IsIPv4(ip))
-	return ip, v6, nil
+	return ip, isipv6(!pubip.IsIPv4(ip)), nil
 }
 
 func (ap *app) writeToCache(ip string, v6 isipv6, cache *Cache) {
-	// cache might be nil
 	if cache == nil {
 		cache = new(Cache)
 	}
 	if v6 {
-		logfn("set IPv6")
+		logln("set IPv6")
 		cache.setIPv6(ip)
 	} else {
-		logfn("set IPv4")
+		logln("set IPv4")
 		cache.setIPv4(ip)
 	}
 	if err := cache.save(ap.cacheFile); err == nil {
-		logfn("result cached")
+		logln("result cached")
 	}
 }
 
-func parseArgs() app {
+func parseFlags() app {
 	showVersion := flag.Bool("version", false, "print version")
 	v6 := flag.Bool("6", false, "only IPv6")
 	v4 := flag.Bool("4", false, "only IPv4")
+	both := flag.Bool("both", false, "IPv6 and IPv4")
 	flag.BoolVar(&verbose, "v", false, "print verbose info about app execution")
 	flag.Parse()
 	ipFormat := pubip.IPv6orIPv4
@@ -102,6 +108,7 @@ func parseArgs() app {
 	}
 	return app{
 		showVersion: *showVersion,
+		showBoth:    *both,
 		format:      ipFormat,
 		cacheFile:   cacheLocation(),
 	}

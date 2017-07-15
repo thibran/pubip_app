@@ -24,15 +24,19 @@ var (
 	errIPv6Empty   = errors.New("no IPv6 address in cache")
 	errIPv4Empty   = errors.New("no IPv4 address in cache")
 	errNotInCache  = errors.New("value not in cache")
-	cacheTimeLimit = time.Duration(15 * time.Minute)
+	cacheTimeLimit = time.Duration(time.Minute * 15)
 )
 
 func loadCache(cacheFile string) (*Cache, error) {
+	if verbose {
+		logln("read:", cacheFile)
+	}
 	f, err := os.Open(cacheFile)
 	if err != nil {
 		return nil, err
 	}
 	defer f.Close()
+
 	var data Cache
 	dec := gob.NewDecoder(f)
 	if err := dec.Decode(&data); err != nil {
@@ -55,14 +59,13 @@ func (c *Cache) save(cacheFile string) error {
 // if the cache entry is not older than cacheTimeLimit (15 min).
 func (c *Cache) maybeIP(t pubip.IPType) (string, error) {
 	useCache := func(last time.Time) bool {
-		now := time.Now()
 		other := last.Add(cacheTimeLimit)
-		return other.After(now)
+		return other.After(time.Now())
 	}
 	if t == pubip.IPv6 || t == pubip.IPv6orIPv4 {
 		if useCache(c.V6last) && len(c.V6ip) != 0 {
 			return c.V6ip, nil
-			// case IPv6 only
+			// IPv6 only
 		} else if t == pubip.IPv6 {
 			return "", errIPv6Empty
 		}
@@ -70,7 +73,7 @@ func (c *Cache) maybeIP(t pubip.IPType) (string, error) {
 	if t == pubip.IPv4 || t == pubip.IPv6orIPv4 {
 		if useCache(c.V4last) && len(c.V4ip) != 0 {
 			return c.V4ip, nil
-			// case IPv4 only
+			// IPv4 only
 		} else if t == pubip.IPv4 {
 			return "", errIPv4Empty
 		}
@@ -94,22 +97,22 @@ func (c *Cache) setIPv4(ip string) {
 func cacheLocation() string {
 	var cdir string
 	// snap dir
-	if d := os.Getenv("SNAP_USER_COMMON"); len(d) != 0 {
+	if d := os.Getenv("SNAP_USER_COMMON"); d != "" {
 		cdir = d
 		// XDG cache
-	} else if d := os.Getenv("XDG_CACHE_HOME"); len(d) != 0 {
+	} else if d := os.Getenv("XDG_CACHE_HOME"); d != "" {
 		cdir = d
 		// ~/.cache
 	} else if d, err := dotCache(); err == nil {
 		cdir = d
 		// tmp
-	} else if d := os.TempDir(); len(d) != 0 {
+	} else if d := os.TempDir(); d != "" {
 		cdir = d
 	}
 	if cdir == "" {
 		log.Fatalln("unknown tmp dir location")
 	}
-	return cdir + string(filepath.Separator) + "pubip.cache"
+	return filepath.Join(cdir, "pubip.cache")
 }
 
 // returns maybe the path to the linux ~/.cache directory
@@ -118,36 +121,10 @@ func dotCache() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	cache := user.HomeDir + "/.cache"
+	cache := filepath.Join(user.HomeDir, ".cache")
 	fi, err := os.Stat(cache)
 	if err == nil && fi.IsDir() {
 		return cache, nil
 	}
 	return "", err
 }
-
-// func loadCache(cacheFile string) (*Cache, error) {
-// 	buf, err := ioutil.ReadFile(cacheFile)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	var data Cache
-// 	if err := json.Unmarshal(buf, &data); err != nil {
-// 		return nil, err
-// 	}
-// 	return &data, nil
-// }
-
-// func (c *Cache) save(cacheDir string) error {
-// 	buf, err := json.Marshal(c)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	f, err := os.Create(cacheDir)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	defer f.Close()
-// 	_, err = f.Write(buf)
-// 	return err
-// }
