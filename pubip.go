@@ -29,16 +29,26 @@ func main() {
 	}
 	if app.showBoth {
 		app.format = pubip.IPv6
-		v6 := app.run()
+		v6, err := app.run()
+		if err != nil {
+			log.Fatalln(err)
+		}
 		app.format = pubip.IPv4
-		v4 := app.run()
+		v4, err := app.run()
+		if err != nil {
+			log.Fatalln(err)
+		}
 		fmt.Printf("IPv6: %s\nIPv4: %s\n", v6, v4)
 		os.Exit(0)
 	}
-	fmt.Println(app.run())
+	ip, err := app.run()
+	if err != nil {
+		log.Fatalln(err)
+	}
+	fmt.Println(ip)
 }
 
-func (ap *app) run() string {
+func (ap *app) run() (string, error) {
 	cache, err := loadCache(ap.cacheFile)
 	if err != nil {
 		logln("no cache entry")
@@ -50,16 +60,15 @@ func (ap *app) run() string {
 		logln("ip not in cache or too old")
 		return ap.handleNotInCache(cache)
 	}
-	return ip
+	return ip, nil
 }
 
-func (ap *app) handleNotInCache(cache *Cache) string {
+func (ap *app) handleNotInCache(cache *Cache) (string, error) {
 	ip, isipv6, err := ap.ipFromInternet()
 	if err != nil {
-		log.Fatalf("ip not in cache: %s\n", err)
+		return "", fmt.Errorf("ip not in cache: %s", err)
 	}
-	ap.writeToCache(ip, isipv6, cache)
-	return ip
+	return ip, ap.writeToCache(ip, isipv6, cache)
 }
 
 type isipv6 bool
@@ -69,7 +78,7 @@ func (ap *app) ipFromInternet() (string, isipv6, error) {
 	m := pubip.NewMaster()
 	m.Parallel = 2
 	m.Format = ap.format
-	logf("request %s address", ap.format)
+	logf("request %s address\n", ap.format)
 	ip, err := m.Address()
 	if err != nil {
 		return "", false, err
@@ -77,7 +86,7 @@ func (ap *app) ipFromInternet() (string, isipv6, error) {
 	return ip, isipv6(!pubip.IsIPv4(ip)), nil
 }
 
-func (ap *app) writeToCache(ip string, v6 isipv6, cache *Cache) {
+func (ap *app) writeToCache(ip string, v6 isipv6, cache *Cache) error {
 	if cache == nil {
 		cache = new(Cache)
 	}
@@ -88,9 +97,11 @@ func (ap *app) writeToCache(ip string, v6 isipv6, cache *Cache) {
 		logln("set IPv4")
 		cache.setIPv4(ip)
 	}
-	if err := cache.save(ap.cacheFile); err == nil {
-		logln("result cached")
+	if err := cache.save(ap.cacheFile); err != nil {
+		return err
 	}
+	logln("result cached")
+	return nil
 }
 
 func parseFlags() app {

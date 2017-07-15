@@ -28,9 +28,7 @@ var (
 )
 
 func loadCache(cacheFile string) (*Cache, error) {
-	if verbose {
-		logln("read:", cacheFile)
-	}
+	logln("read:", cacheFile)
 	f, err := os.Open(cacheFile)
 	if err != nil {
 		return nil, err
@@ -103,7 +101,7 @@ func cacheLocation() string {
 	} else if d := os.Getenv("XDG_CACHE_HOME"); d != "" {
 		cdir = d
 		// ~/.cache
-	} else if d, err := dotCache(); err == nil {
+	} else if d, err := dotCacheDir(); err == nil {
 		cdir = d
 		// tmp
 	} else if d := os.TempDir(); d != "" {
@@ -116,7 +114,7 @@ func cacheLocation() string {
 }
 
 // returns maybe the path to the linux ~/.cache directory
-func dotCache() (string, error) {
+func dotCacheDir() (string, error) {
 	user, err := user.Current()
 	if err != nil {
 		return "", err
