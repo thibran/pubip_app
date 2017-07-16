@@ -10,7 +10,7 @@ import (
 	"github.com/thibran/pubip"
 )
 
-const appVersion = "0.5"
+const appVersion = "0.6"
 
 var verbose = false
 
