@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
+	"sync"
 	"time"
 
 	"github.com/thibran/pubip"
@@ -14,10 +15,12 @@ import (
 
 // Cache result of the ip addresses
 type Cache struct {
-	V6ip   string    `json:"v6ip"`
-	V6last time.Time `json:"v6last"`
-	V4ip   string    `json:"v4ip"`
-	V4last time.Time `json:"v4last"`
+	V6ip      string    `json:"v6ip"`
+	V6last    time.Time `json:"v6last"`
+	V4ip      string    `json:"v4ip"`
+	V4last    time.Time `json:"v4last"`
+	cacheFile string
+	mut       sync.Mutex
 }
 
 var (
@@ -27,41 +30,39 @@ var (
 	cacheTimeLimit = time.Duration(time.Minute * 15)
 )
 
-func loadCache(cacheFile string) (*Cache, error) {
+// loadCache from file. Returns always a non-nil cache object.
+func loadCache(cacheFile string) *Cache {
 	logln("read:", cacheFile)
+	cache := new(Cache)
+	cache.cacheFile = cacheFile
 	f, err := os.Open(cacheFile)
 	if err != nil {
-		return nil, err
+		logf("no cache file: %s\n", err)
+		return cache
 	}
 	defer f.Close()
-
-	var data Cache
 	dec := gob.NewDecoder(f)
-	if err := dec.Decode(&data); err != nil {
-		return nil, err
+	if err := dec.Decode(cache); err != nil {
+		logf("no cache file: %s\n", err)
+		return cache
 	}
-	return &data, nil
-}
-
-func (c *Cache) save(cacheFile string) error {
-	f, err := os.Create(cacheFile)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-	enc := gob.NewEncoder(f)
-	return enc.Encode(c)
+	logln("cache file exists")
+	return cache
 }
 
 // maybeIP returns the matching IP address for the given IPType t,
 // if the cache entry is not older than cacheTimeLimit (15 min).
 func (c *Cache) maybeIP(t pubip.IPType) (string, error) {
-	useCache := func(last time.Time) bool {
+	c.mut.Lock()
+	defer c.mut.Unlock()
+
+	checkCache := func(last time.Time) bool {
 		other := last.Add(cacheTimeLimit)
 		return other.After(time.Now())
 	}
+
 	if t == pubip.IPv6 || t == pubip.IPv6orIPv4 {
-		if useCache(c.V6last) && len(c.V6ip) != 0 {
+		if checkCache(c.V6last) && len(c.V6ip) != 0 {
 			return c.V6ip, nil
 			// IPv6 only
 		} else if t == pubip.IPv6 {
@@ -69,7 +70,7 @@ func (c *Cache) maybeIP(t pubip.IPType) (string, error) {
 		}
 	}
 	if t == pubip.IPv4 || t == pubip.IPv6orIPv4 {
-		if useCache(c.V4last) && len(c.V4ip) != 0 {
+		if checkCache(c.V4last) && len(c.V4ip) != 0 {
 			return c.V4ip, nil
 			// IPv4 only
 		} else if t == pubip.IPv4 {
@@ -77,6 +78,18 @@ func (c *Cache) maybeIP(t pubip.IPType) (string, error) {
 		}
 	}
 	return "", errNotInCache
+}
+
+func (c *Cache) save() error {
+	c.mut.Lock()
+	defer c.mut.Unlock()
+	f, err := os.Create(c.cacheFile)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	enc := gob.NewEncoder(f)
+	return enc.Encode(c)
 }
 
 // setIPv6 non-empty IP string.

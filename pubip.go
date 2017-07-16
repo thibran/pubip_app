@@ -17,7 +17,7 @@ var verbose = false
 type app struct {
 	showVersion bool
 	showBoth    bool
-	format      pubip.IPType
+	ipType      pubip.IPType
 	cacheFile   string
 }
 
@@ -27,80 +27,73 @@ func main() {
 		fmt.Printf("pubip %s   %s\n", appVersion, runtime.Version())
 		os.Exit(0)
 	}
+	cache := loadCache(app.cacheFile)
 	if app.showBoth {
-		app.format = pubip.IPv6
-		v6, err := app.run()
-		if err != nil {
-			log.Fatalln(err)
-		}
-		app.format = pubip.IPv4
-		v4, err := app.run()
-		if err != nil {
-			log.Fatalln(err)
-		}
-		fmt.Printf("IPv6: %s\nIPv4: %s\n", v6, v4)
+		handleShowBoth(cache)
 		os.Exit(0)
 	}
-	ip, err := app.run()
+	handleDefault(cache, app.ipType)
+}
+
+func handleDefault(cache *Cache, ipType pubip.IPType) {
+	ip, err := getIP(cache, ipType)
 	if err != nil {
 		log.Fatalln(err)
 	}
 	fmt.Println(ip)
 }
 
-func (ap *app) run() (string, error) {
-	cache, err := loadCache(ap.cacheFile)
-	if err != nil {
-		logln("no cache entry")
-		return ap.handleNotInCache(cache)
+func handleShowBoth(cache *Cache) {
+	errc := make(chan error)
+	v6c := make(chan string)
+	v4c := make(chan string)
+	withChan := func(result chan<- string, t pubip.IPType) {
+		ip, err := getIP(cache, t)
+		if err == nil {
+			result <- ip
+		} else {
+			errc <- err
+		}
 	}
-	logln("cache entry exists")
-	ip, err := cache.maybeIP(ap.format)
-	if err != nil {
-		logln("ip not in cache or too old")
-		return ap.handleNotInCache(cache)
-	}
-	return ip, nil
+	go withChan(v6c, pubip.IPv6)
+	go withChan(v4c, pubip.IPv4)
+	go func() {
+		for err := range errc {
+			log.Fatalln(err)
+		}
+		close(v6c)
+		close(v4c)
+	}()
+	fmt.Printf("IPv6: %s\nIPv4: %s\n", <-v6c, <-v4c)
+	close(errc)
 }
 
-func (ap *app) handleNotInCache(cache *Cache) (string, error) {
-	ip, isipv6, err := ap.ipFromInternet()
+func getIP(cache *Cache, ipType pubip.IPType) (string, error) {
+	ip, err := cache.maybeIP(ipType)
 	if err != nil {
-		return "", fmt.Errorf("ip not in cache: %s", err)
+		logf("%s - not in cache or too old\n", ipType)
+		m := pubip.NewMaster()
+		m.Parallel = 2
+		m.Format = ipType
+		logf("request %s address\n", ipType)
+		ip, err = m.Address()
+		if err == nil {
+			writeToCache(cache, ip, ipType)
+		}
 	}
-	return ip, ap.writeToCache(ip, isipv6, cache)
+	return ip, err
 }
 
-type isipv6 bool
-
-// fromInternet returns the IP address by requesting it online.
-func (ap *app) ipFromInternet() (string, isipv6, error) {
-	m := pubip.NewMaster()
-	m.Parallel = 2
-	m.Format = ap.format
-	logf("request %s address\n", ap.format)
-	ip, err := m.Address()
-	if err != nil {
-		return "", false, err
-	}
-	return ip, isipv6(!pubip.IsIPv4(ip)), nil
-}
-
-func (ap *app) writeToCache(ip string, v6 isipv6, cache *Cache) error {
-	if cache == nil {
-		cache = new(Cache)
-	}
-	if v6 {
-		logln("set IPv6")
+func writeToCache(cache *Cache, ip string, ipType pubip.IPType) error {
+	if ipType == pubip.IPv6 {
 		cache.setIPv6(ip)
 	} else {
-		logln("set IPv4")
 		cache.setIPv4(ip)
 	}
-	if err := cache.save(ap.cacheFile); err != nil {
+	if err := cache.save(); err != nil {
 		return err
 	}
-	logln("result cached")
+	logln("wrote to cache")
 	return nil
 }
 
@@ -111,16 +104,16 @@ func parseFlags() app {
 	both := flag.Bool("both", false, "IPv6 and IPv4")
 	flag.BoolVar(&verbose, "v", false, "print verbose info about app execution")
 	flag.Parse()
-	ipFormat := pubip.IPv6orIPv4
+	ipType := pubip.IPv6orIPv4
 	if *v6 {
-		ipFormat = pubip.IPv6
+		ipType = pubip.IPv6
 	} else if *v4 {
-		ipFormat = pubip.IPv4
+		ipType = pubip.IPv4
 	}
 	return app{
 		showVersion: *showVersion,
 		showBoth:    *both,
-		format:      ipFormat,
+		ipType:      ipType,
 		cacheFile:   cacheLocation(),
 	}
 }

@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -17,21 +19,26 @@ func TestCacheLocation(t *testing.T) {
 }
 
 func TestLoadCache_fail(t *testing.T) {
-	cacheFile := "/foo"
-	if _, err := loadCache(cacheFile); err == nil {
+	cache := loadCache("/foo")
+	if cache.V6ip != "" || cache.V4ip != "" {
 		t.Fail()
 	}
 }
 
 func TestSave(t *testing.T) {
-	cacheDir := "/home/tux/.cache/pubip.cache"
-	cache := Cache{
-		V6ip:   "ip-6",
-		V6last: time.Now(),
-		V4ip:   "ip-4",
-		V4last: time.Now(),
+	tmp := os.TempDir()
+	if tmp == "" {
+		t.Errorf("TestSave - no tmp dir")
 	}
-	if err := cache.save(cacheDir); err != nil {
+	cache := Cache{
+		V6ip:      "ip-6",
+		V6last:    time.Now(),
+		V4ip:      "ip-4",
+		V4last:    time.Now(),
+		cacheFile: filepath.Join(tmp, "pubip_test.cache"),
+	}
+
+	if err := cache.save(); err != nil {
 		t.Error(err)
 	}
 }
