@@ -1,5 +1,5 @@
 name: pubip
-version: 0.5
+version: 0.6
 icon: misc/icon.svg
 summary:  Display public IPv6 or IPv4 address 
 description: |
