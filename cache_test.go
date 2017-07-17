@@ -2,8 +2,9 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
+	"log"
 	"os"
-	"path/filepath"
 	"testing"
 	"time"
 
@@ -26,16 +27,18 @@ func TestLoadCache_fail(t *testing.T) {
 }
 
 func TestSave(t *testing.T) {
-	tmp := os.TempDir()
-	if tmp == "" {
-		t.Errorf("TestSave - no tmp dir")
+	tmp, err := ioutil.TempFile("", "pubip_cache")
+	if err != nil {
+		log.Fatal(err)
 	}
+	defer os.Remove(tmp.Name())
+
 	cache := Cache{
 		V6ip:      "ip-6",
 		V6last:    time.Now(),
 		V4ip:      "ip-4",
 		V4last:    time.Now(),
-		cacheFile: filepath.Join(tmp, "pubip_test.cache"),
+		cacheFile: tmp.Name(),
 	}
 
 	if err := cache.save(); err != nil {

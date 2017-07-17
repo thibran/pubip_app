@@ -1,12 +1,11 @@
 # pubip
 App to display the public IPv6 or IPv4 address.
 
+[![Snap Status](https://build.snapcraft.io/badge/thibran/pubip_app.svg)](https://build.snapcraft.io/user/thibran/pubip_app)
+
 <img src="misc/icon.png" align="left" height="128" width="128" hspace="20"/>
 
 Version: 0.6
-
-[![Snap Status](https://build.snapcraft.io/badge/thibran/pubip_app.svg)](https://build.snapcraft.io/user/thibran/pubip_app)
-
 
 | Install     | Command                               |
 --------------| ---------------------------------------

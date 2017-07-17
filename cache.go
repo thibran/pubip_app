@@ -37,7 +37,7 @@ func loadCache(cacheFile string) *Cache {
 	cache.cacheFile = cacheFile
 	f, err := os.Open(cacheFile)
 	if err != nil {
-		logf("no cache file: %s\n", err)
+		logln(err)
 		return cache
 	}
 	defer f.Close()
