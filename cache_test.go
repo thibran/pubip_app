@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"encoding/gob"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -28,30 +27,25 @@ func TestLoadCache_fail(t *testing.T) {
 	}
 }
 
-// func TestDecodeFrom(t *testing.T) {
-// 	cacheFile := "/home/tux/snap/pubip/common/pubip.cache"
-// 	f, err := os.Open(cacheFile)
-// 	if err != nil {
-// 		t.Error(err)
-// 	}
-// 	defer f.Close()
-// 	cache := &Cache{cacheFile: cacheFile}
-// 	decodeFrom(f, cache)
+func TestEncodeTo(t *testing.T) {
+	var buf bytes.Buffer
+	cacheFile := "/baz/zot/pubip.cache"
+	req := "2003:c8:9bec:4a70:e755:6628:78d1:aa06"
+	cache := Cache{cacheFile: cacheFile, V6ip: req}
 
-// 	req := "2003:c8:9bec:4a70:e755:6628:78d1:aa06"
-// 	if cache.V6ip != req {
-// 		t.Errorf("should be %s, but is %s\n", req, cache.V6ip)
-// 	}
-// }
-
-// 2001:db8:0:0:0:ff00:42:8329
+	if err := encodeTo(&buf, &cache); err != nil {
+		t.Error(err)
+	}
+	if buf.Len() == 0 {
+		t.Fail()
+	}
+}
 
 func TestDecodeFrom(t *testing.T) {
 	var buf bytes.Buffer
 	cacheFile := "/baz/zot/pubip.cache"
 	req := "2003:c8:9bec:4a70:e755:6628:78d1:aa06"
-	enc := gob.NewEncoder(&buf)
-	enc.Encode(Cache{cacheFile: cacheFile, V6ip: req})
+	encodeTo(&buf, &Cache{cacheFile: cacheFile, V6ip: req})
 
 	cache := &Cache{cacheFile: cacheFile}
 	if decodeFrom(&buf, cache); cache.V6ip != req {
@@ -65,15 +59,14 @@ func TestSave(t *testing.T) {
 		log.Fatal(err)
 	}
 	defer os.Remove(tmp.Name())
-
+	now := time.Now()
 	cache := Cache{
 		V6ip:      "ip-6",
-		V6last:    time.Now(),
+		V6last:    now,
 		V4ip:      "ip-4",
-		V4last:    time.Now(),
+		V4last:    now,
 		cacheFile: tmp.Name(),
 	}
-
 	if err := cache.save(); err != nil {
 		t.Error(err)
 	}

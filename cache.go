@@ -94,7 +94,11 @@ func (c *Cache) save() error {
 		return err
 	}
 	defer f.Close()
-	enc := gob.NewEncoder(f)
+	return encodeTo(f, c)
+}
+
+func encodeTo(w io.Writer, c *Cache) error {
+	enc := gob.NewEncoder(w)
 	return enc.Encode(c)
 }
 
