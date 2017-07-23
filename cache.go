@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/gob"
 	"errors"
+	"io"
 	"log"
 	"os"
 	"os/user"
@@ -33,21 +34,26 @@ var (
 // loadCache from file. Returns always a non-nil cache object.
 func loadCache(cacheFile string) *Cache {
 	logln("read:", cacheFile)
-	cache := new(Cache)
-	cache.cacheFile = cacheFile
+	cache := &Cache{cacheFile: cacheFile}
 	f, err := os.Open(cacheFile)
 	if err != nil {
 		logln(err)
 		return cache
 	}
 	defer f.Close()
-	dec := gob.NewDecoder(f)
+	decodeFrom(f, cache)
+	return cache
+}
+
+// loadCache from file. Returns always a non-nil cache object.
+func decodeFrom(r io.Reader, cache *Cache) {
+	dec := gob.NewDecoder(r)
 	if err := dec.Decode(cache); err != nil {
 		logf("no cache file: %s\n", err)
-		return cache
+		return
 	}
 	logln("cache file exists")
-	return cache
+	return
 }
 
 // maybeIP returns the matching IP address for the given IPType t,
