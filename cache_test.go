@@ -16,14 +16,14 @@ func TestCacheLocation(t *testing.T) {
 	dir := cacheLocation()
 	fmt.Println(dir)
 	if len(dir) == 0 {
-		t.Fail()
+		t.Fatal()
 	}
 }
 
 func TestLoadCache_fail(t *testing.T) {
 	cache := loadCache("/foo")
 	if cache.V6ip != "" || cache.V4ip != "" {
-		t.Fail()
+		t.Fatal()
 	}
 }
 
@@ -34,10 +34,10 @@ func TestEncodeTo(t *testing.T) {
 	cache := Cache{cacheFile: cacheFile, V6ip: req}
 
 	if err := encodeTo(&buf, &cache); err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 	if buf.Len() == 0 {
-		t.Fail()
+		t.Fatal()
 	}
 }
 
@@ -68,7 +68,7 @@ func TestSave(t *testing.T) {
 		cacheFile: tmp.Name(),
 	}
 	if err := cache.save(); err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 }
 
@@ -78,7 +78,7 @@ func TestMaybeIP_v6_tooOld(t *testing.T) {
 		V6last: time.Now().Add(-time.Duration(16 * time.Minute)),
 	}
 	if _, err := cache.maybeIP(pubip.IPv6); err == nil {
-		t.Fail()
+		t.Fatal()
 	}
 }
 
@@ -89,10 +89,10 @@ func TestMaybeIP_v6_ok(t *testing.T) {
 	}
 	ip, err := cache.maybeIP(pubip.IPv6)
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 	if ip != cache.V6ip {
-		t.Fail()
+		t.Fatal()
 	}
 }
 
@@ -101,7 +101,7 @@ func TestMaybeIP_v6_empty(t *testing.T) {
 		V6last: time.Now().Add(-time.Duration(14 * time.Minute)),
 	}
 	if _, err := cache.maybeIP(pubip.IPv6); err == nil {
-		t.Fail()
+		t.Fatal()
 	}
 }
 
@@ -112,7 +112,7 @@ func TestMaybeIP_v4_ok(t *testing.T) {
 	}
 	ip, err := cache.maybeIP(pubip.IPv4)
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 	if ip != cache.V4ip {
 		t.Fail()
@@ -135,7 +135,7 @@ func TestMaybeIP_v6orv4_returnIPv6(t *testing.T) {
 	}
 	ip, err := cache.maybeIP(pubip.IPv6orIPv4)
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 	if ip != cache.V6ip {
 		t.Fail()
@@ -150,9 +150,9 @@ func TestMaybeIP_v6orv4_returnIPv4(t *testing.T) {
 	}
 	ip, err := cache.maybeIP(pubip.IPv6orIPv4)
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 	if ip != cache.V4ip {
-		t.Fail()
+		t.Fatal()
 	}
 }
