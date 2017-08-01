@@ -68,7 +68,7 @@ func (c *Cache) maybeIP(t pubip.IPType) (string, error) {
 	}
 
 	if t == pubip.IPv6 || t == pubip.IPv6orIPv4 {
-		if checkCache(c.V6last) && len(c.V6ip) != 0 {
+		if checkCache(c.V6last) && c.V6ip != "" {
 			return c.V6ip, nil
 			// IPv6 only
 		} else if t == pubip.IPv6 {
@@ -76,7 +76,7 @@ func (c *Cache) maybeIP(t pubip.IPType) (string, error) {
 		}
 	}
 	if t == pubip.IPv4 || t == pubip.IPv6orIPv4 {
-		if checkCache(c.V4last) && len(c.V4ip) != 0 {
+		if checkCache(c.V4last) && c.V4ip != "" {
 			return c.V4ip, nil
 			// IPv4 only
 		} else if t == pubip.IPv4 {
