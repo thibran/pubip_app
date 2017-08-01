@@ -45,7 +45,7 @@ func loadCache(cacheFile string) *Cache {
 	return cache
 }
 
-// loadCache from file. Returns always a non-nil cache object.
+// loadCache from file. The cache object is always non-nil.
 func decodeFrom(r io.Reader, cache *Cache) {
 	dec := gob.NewDecoder(r)
 	if err := dec.Decode(cache); err != nil {

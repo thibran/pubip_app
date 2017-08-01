@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"os"
 	"runtime"
 
 	"github.com/thibran/pubip"
@@ -25,12 +24,12 @@ func main() {
 	app := parseFlags()
 	if app.showVersion {
 		fmt.Printf("pubip %s   %s\n", appVersion, runtime.Version())
-		os.Exit(0)
+		return
 	}
 	cache := loadCache(app.cacheFile)
 	if app.showBoth {
 		handleShowBoth(cache)
-		os.Exit(0)
+		return
 	}
 	handleDefault(cache, app.ipType)
 }
