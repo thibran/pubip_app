@@ -1,13 +1,13 @@
-name: pubip
-version: 0.6
-icon: misc/icon.svg
-summary:  Display public IPv6 or IPv4 address 
+name:        pubip
+version:     0.6
+summary:     Display public IPv6 or IPv4 address
+confinement: strict
+grade:       stable
+icon:        misc/icon.svg
 description: |
   To query IPv6 only use 'pubip -6'.
   To query IPv4 only use 'pubip -4'.
   The IP address is cached for 15 minutes.
-confinement: strict
-grade: stable
 
 apps:
   pubip:
@@ -21,8 +21,15 @@ apps:
     plugs: [network]
 
 parts:
+  go:
+    source-tag: go1.10
   pubip:
+    after: [go]
     plugin: go
-    source: https://github.com/thibran/pubip_app.git
+    source: .
+    go-importpath: github.com/thibran/pubip_app
     organize:
-      bin/pubip_app.git: bin/pubip
+      bin/pubip_app: bin/pubip
+
+    install: |
+      strip --strip-all $SNAPCRAFT_PART_INSTALL/bin/pubip_app
